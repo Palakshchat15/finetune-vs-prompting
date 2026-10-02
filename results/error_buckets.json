@@ -1,0 +1,740 @@
+{
+ "tfidf_logreg|test": {
+  "n": 3080,
+  "errors": 338,
+  "buckets": {
+   "different_topic": {
+    "count": 156,
+    "share_of_errors": 0.46153846153846156,
+    "examples": [
+     {
+      "text": "I ordered a card but it has not arrived. Help please!",
+      "label": "card_arrival",
+      "pred": "transfer_not_received_by_recipient"
+     },
+     {
+      "text": "How do I add the card to my account?",
+      "label": "card_linking",
+      "pred": "topping_up_by_card"
+     },
+     {
+      "text": "The exchange rate would be?",
+      "label": "exchange_rate",
+      "pred": "wrong_exchange_rate_for_cash_withdrawal"
+     },
+     {
+      "text": "The exchange rate was wrong when I bought something outside the country.",
+      "label": "card_payment_wrong_exchange_rate",
+      "pred": "wrong_exchange_rate_for_cash_withdrawal"
+     }
+    ]
+   },
+   "same_topic": {
+    "count": 182,
+    "share_of_errors": 0.5384615384615384,
+    "examples": [
+     {
+      "text": "How do I locate my card?",
+      "label": "card_arrival",
+      "pred": "get_physical_card"
+     },
+     {
+      "text": "When will I get my card?",
+      "label": "card_arrival",
+      "pred": "card_delivery_estimate"
+     },
+     {
+      "text": "How long does a card delivery take?",
+      "label": "card_arrival",
+      "pred": "card_delivery_estimate"
+     },
+     {
+      "text": "How do I know when my card will arrive?",
+      "label": "card_arrival",
+      "pred": "card_delivery_estimate"
+     }
+    ]
+   }
+  }
+ },
+ "tfidf_logreg|test_subset": {
+  "n": 770,
+  "errors": 96,
+  "buckets": {
+   "different_topic": {
+    "count": 45,
+    "share_of_errors": 0.46875,
+    "examples": [
+     {
+      "text": "The exchange rate would be?",
+      "label": "exchange_rate",
+      "pred": "wrong_exchange_rate_for_cash_withdrawal"
+     },
+     {
+      "text": "There is a fee I don't recognize on my statement.",
+      "label": "extra_charge_on_statement",
+      "pred": "card_payment_not_recognised"
+     },
+     {
+      "text": "When will the $1 transaction be credited to me?",
+      "label": "extra_charge_on_statement",
+      "pred": "transfer_not_received_by_recipient"
+     },
+     {
+      "text": "What is the €1 fee for?",
+      "label": "extra_charge_on_statement",
+      "pred": "top_up_by_bank_transfer_charge"
+     }
+    ]
+   },
+   "same_topic": {
+    "count": 51,
+    "share_of_errors": 0.53125,
+    "examples": [
+     {
+      "text": "Can I link another card to my account?",
+      "label": "card_linking",
+      "pred": "getting_spare_card"
+     },
+     {
+      "text": "How do I change currencies to euros?",
+      "label": "fiat_currency_support",
+      "pred": "exchange_via_app"
+     },
+     {
+      "text": "When are cards delivered?",
+      "label": "card_delivery_estimate",
+      "pred": "order_physical_card"
+     },
+     {
+      "text": "OMG!  I'm trying to load my card and it wont top up!  I desperately need the money either on my card or in my bank, where is it?",
+      "label": "pending_top_up",
+      "pred": "top_up_failed"
+     }
+    ]
+   }
+  }
+ },
+ "zero_shot_7b|test": {
+  "n": 3080,
+  "errors": 1152,
+  "buckets": {
+   "different_topic": {
+    "count": 567,
+    "share_of_errors": 0.4921875,
+    "examples": [
+     {
+      "text": "Why won't my card show up on the app?",
+      "label": "card_linking",
+      "pred": "Refund_not_showing_up"
+     },
+     {
+      "text": "The exchange rate would be?",
+      "label": "exchange_rate",
+      "pred": "wrong_exchange_rate_for_cash_withdrawal"
+     },
+     {
+      "text": "I purchased something in a foreign currency but the rate applied is wrong",
+      "label": "card_payment_wrong_exchange_rate",
+      "pred": "wrong_exchange_rate_for_cash_withdrawal"
+     },
+     {
+      "text": "I made a currency exchange and think I was charged more than I should of been.",
+      "label": "card_payment_wrong_exchange_rate",
+      "pred": "wrong_exchange_rate_for_cash_withdrawal"
+     }
+    ]
+   },
+   "same_topic": {
+    "count": 585,
+    "share_of_errors": 0.5078125,
+    "examples": [
+     {
+      "text": "How do I locate my card?",
+      "label": "card_arrival",
+      "pred": "card_acceptance"
+     },
+     {
+      "text": "I still have not received my new card, I ordered over a week ago.",
+      "label": "card_arrival",
+      "pred": "card_delivery_estimate"
+     },
+     {
+      "text": "I ordered a card but it has not arrived. Help please!",
+      "label": "card_arrival",
+      "pred": "card_delivery_estimate"
+     },
+     {
+      "text": "When will I get my card?",
+      "label": "card_arrival",
+      "pred": "card_delivery_estimate"
+     }
+    ]
+   }
+  }
+ },
+ "zero_shot_7b|test_subset": {
+  "n": 770,
+  "errors": 285,
+  "buckets": {
+   "different_topic": {
+    "count": 137,
+    "share_of_errors": 0.4807017543859649,
+    "examples": [
+     {
+      "text": "The exchange rate would be?",
+      "label": "exchange_rate",
+      "pred": "wrong_exchange_rate_for_cash_withdrawal"
+     },
+     {
+      "text": "The exchange rate on my purchase is wrong.",
+      "label": "card_payment_wrong_exchange_rate",
+      "pred": "wrong_exchange_rate_for_cash_withdrawal"
+     },
+     {
+      "text": "I bought something, but the exchange rate looks wrong.",
+      "label": "card_payment_wrong_exchange_rate",
+      "pred": "wrong_exchange_rate_for_cash_withdrawal"
+     },
+     {
+      "text": "The rate for a currency exchange was wrong when I bought something.",
+      "label": "card_payment_wrong_exchange_rate",
+      "pred": "wrong_exchange_rate_for_cash_withdrawal"
+     }
+    ]
+   },
+   "same_topic": {
+    "count": 148,
+    "share_of_errors": 0.519298245614035,
+    "examples": [
+     {
+      "text": "Do you know if there is a tracking number for the new card you sent me?",
+      "label": "card_arrival",
+      "pred": "card_delivery_estimate"
+     },
+     {
+      "text": "I still don't have my card after 2 weeks.  What should I do?",
+      "label": "card_arrival",
+      "pred": "card_delivery_estimate"
+     },
+     {
+      "text": "I have been waiting longer than expected for my bank card, could you provide information on when it will arrive?",
+      "label": "card_arrival",
+      "pred": "card_delivery_estimate"
+     },
+     {
+      "text": "I've been waiting longer than expected for my card.",
+      "label": "card_arrival",
+      "pred": "card_delivery_estimate"
+     }
+    ]
+   }
+  }
+ },
+ "few_shot_7b|test": {
+  "n": 3080,
+  "errors": 345,
+  "buckets": {
+   "different_topic": {
+    "count": 173,
+    "share_of_errors": 0.5014492753623189,
+    "examples": [
+     {
+      "text": "Where do I need to go in the app to enter my card info?",
+      "label": "card_linking",
+      "pred": "edit_personal_details"
+     },
+     {
+      "text": "The exchange rate seems off on this transaction",
+      "label": "card_payment_wrong_exchange_rate",
+      "pred": "wrong_exchange_rate_for_cash_withdrawal"
+     },
+     {
+      "text": "I would like a refund on the extra pound I was charged.",
+      "label": "extra_charge_on_statement",
+      "pred": "request_refund"
+     },
+     {
+      "text": "When will the $1 transaction be credited to me?",
+      "label": "extra_charge_on_statement",
+      "pred": "transfer_timing"
+     }
+    ]
+   },
+   "same_topic": {
+    "count": 172,
+    "share_of_errors": 0.4985507246376812,
+    "examples": [
+     {
+      "text": "How do I locate my card?",
+      "label": "card_arrival",
+      "pred": "get_physical_card"
+     },
+     {
+      "text": "I ordered a card but it has not arrived. Help please!",
+      "label": "card_arrival",
+      "pred": "getting_spare_card"
+     },
+     {
+      "text": "Is there a way to know when my card will arrive?",
+      "label": "card_arrival",
+      "pred": "card_delivery_estimate"
+     },
+     {
+      "text": "When will I get my card?",
+      "label": "card_arrival",
+      "pred": "card_delivery_estimate"
+     }
+    ]
+   }
+  }
+ },
+ "few_shot_7b|test_subset": {
+  "n": 770,
+  "errors": 93,
+  "buckets": {
+   "different_topic": {
+    "count": 42,
+    "share_of_errors": 0.45161290322580644,
+    "examples": [
+     {
+      "text": "When will the $1 transaction be credited to me?",
+      "label": "extra_charge_on_statement",
+      "pred": "transfer_timing"
+     },
+     {
+      "text": "What's a pending transaction? My card was declined at an ATM, but my account says it's still pending. Can I cancel the payment?",
+      "label": "pending_cash_withdrawal",
+      "pred": "pending_card_payment"
+     },
+     {
+      "text": "There is an incoming payment into my account, but it is deactivated. Will they still be processed?",
+      "label": "fiat_currency_support",
+      "pred": "pending_card_payment"
+     },
+     {
+      "text": "What countries can I travel to and have access to their currencies?",
+      "label": "fiat_currency_support",
+      "pred": "country_support"
+     }
+    ]
+   },
+   "same_topic": {
+    "count": 51,
+    "share_of_errors": 0.5483870967741935,
+    "examples": [
+     {
+      "text": "I have been waiting longer than expected for my bank card, could you provide information on when it will arrive?",
+      "label": "card_arrival",
+      "pred": "card_delivery_estimate"
+     },
+     {
+      "text": "how long does it take to post atm with drawl",
+      "label": "pending_cash_withdrawal",
+      "pred": "cash_withdrawal_charge"
+     },
+     {
+      "text": "How do I change currencies to euros?",
+      "label": "fiat_currency_support",
+      "pred": "exchange_via_app"
+     },
+     {
+      "text": "How do I make sure I don't run out of money on my card while traveling?",
+      "label": "automatic_top_up",
+      "pred": "top_up_limits"
+     }
+    ]
+   }
+  }
+ },
+ "base_1p5b|test": {
+  "n": 3080,
+  "errors": 1810,
+  "buckets": {
+   "different_topic": {
+    "count": 868,
+    "share_of_errors": 0.47955801104972373,
+    "examples": [
+     {
+      "text": "I purchased something in a foreign currency but the rate applied is wrong",
+      "label": "card_payment_wrong_exchange_rate",
+      "pred": "wrong_exchange_rate_for_cash_withdrawal"
+     },
+     {
+      "text": "The exchange rate was wrong when I bought something outside the country.",
+      "label": "card_payment_wrong_exchange_rate",
+      "pred": "wrong_exchange_rate_for_cash_withdrawal"
+     },
+     {
+      "text": "The exchange rate on my purchase is wrong.",
+      "label": "card_payment_wrong_exchange_rate",
+      "pred": "wrong_exchange_rate_for_cash_withdrawal"
+     },
+     {
+      "text": "I bought something, but the exchange rate looks wrong.",
+      "label": "card_payment_wrong_exchange_rate",
+      "pred": "wrong_exchange_rate_for_cash_withdrawal"
+     }
+    ]
+   },
+   "same_topic": {
+    "count": 942,
+    "share_of_errors": 0.5204419889502763,
+    "examples": [
+     {
+      "text": "Do you know if there is a tracking number for the new card you sent me?",
+      "label": "card_arrival",
+      "pred": "card_delivery_estimate"
+     },
+     {
+      "text": "i have not received my card",
+      "label": "card_arrival",
+      "pred": "card_not_working"
+     },
+     {
+      "text": "still waiting on that card",
+      "label": "card_arrival",
+      "pred": "card_not_working"
+     },
+     {
+      "text": "How do I track my card?",
+      "label": "card_arrival",
+      "pred": "card_delivery_estimate"
+     }
+    ]
+   }
+  }
+ },
+ "base_1p5b|test_subset": {
+  "n": 770,
+  "errors": 457,
+  "buckets": {
+   "different_topic": {
+    "count": 233,
+    "share_of_errors": 0.5098468271334792,
+    "examples": [
+     {
+      "text": "The exchange rate on my purchase is wrong.",
+      "label": "card_payment_wrong_exchange_rate",
+      "pred": "wrong_exchange_rate_for_cash_withdrawal"
+     },
+     {
+      "text": "I bought something, but the exchange rate looks wrong.",
+      "label": "card_payment_wrong_exchange_rate",
+      "pred": "wrong_exchange_rate_for_cash_withdrawal"
+     },
+     {
+      "text": "The rate for a currency exchange was wrong when I bought something.",
+      "label": "card_payment_wrong_exchange_rate",
+      "pred": "wrong_exchange_rate_for_cash_withdrawal"
+     },
+     {
+      "text": "I bought something overseas and the wrong exchange rate is on my statement.",
+      "label": "card_payment_wrong_exchange_rate",
+      "pred": "wrong_exchange_rate_for_cash_withdrawal"
+     }
+    ]
+   },
+   "same_topic": {
+    "count": 224,
+    "share_of_errors": 0.49015317286652077,
+    "examples": [
+     {
+      "text": "Do you know if there is a tracking number for the new card you sent me?",
+      "label": "card_arrival",
+      "pred": "card_delivery_estimate"
+     },
+     {
+      "text": "My card still hasn't arrived after 2 weeks. Is it lost?",
+      "label": "card_arrival",
+      "pred": "lost_or_stolen_card"
+     },
+     {
+      "text": "I think something went wrong with my card delivery as I haven't received it yet.",
+      "label": "card_arrival",
+      "pred": "card_delivery_estimate"
+     },
+     {
+      "text": "I'm still waiting for delivery of my new card, why is it taking so long?",
+      "label": "card_arrival",
+      "pred": "card_delivery_estimate"
+     }
+    ]
+   }
+  }
+ },
+ "zero_shot_3b|test": {
+  "n": 3080,
+  "errors": 1445,
+  "buckets": {
+   "different_topic": {
+    "count": 642,
+    "share_of_errors": 0.44429065743944635,
+    "examples": [
+     {
+      "text": "What currencies is an exchange rate calculated in?",
+      "label": "exchange_rate",
+      "pred": "supported_cards_and_currencies"
+     },
+     {
+      "text": "Where did your guys exchange rates come from?",
+      "label": "exchange_rate",
+      "pred": "wrong_exchange_rate_for_cash_withdrawal"
+     },
+     {
+      "text": "why do your exchange rates change",
+      "label": "exchange_rate",
+      "pred": "wrong_exchange_rate_for_cash_withdrawal"
+     },
+     {
+      "text": "I purchased something in a foreign currency but the rate applied is wrong",
+      "label": "card_payment_wrong_exchange_rate",
+      "pred": "wrong_exchange_rate_for_cash_withdrawal"
+     }
+    ]
+   },
+   "same_topic": {
+    "count": 803,
+    "share_of_errors": 0.5557093425605536,
+    "examples": [
+     {
+      "text": "How do I locate my card?",
+      "label": "card_arrival",
+      "pred": "card_delivery_estimate"
+     },
+     {
+      "text": "I still have not received my new card, I ordered over a week ago.",
+      "label": "card_arrival",
+      "pred": "get_physical_card"
+     },
+     {
+      "text": "I ordered a card but it has not arrived. Help please!",
+      "label": "card_arrival",
+      "pred": "card_delivery_estimate"
+     },
+     {
+      "text": "Is there a way to know when my card will arrive?",
+      "label": "card_arrival",
+      "pred": "card_delivery_estimate"
+     }
+    ]
+   }
+  }
+ },
+ "zero_shot_3b|test_subset": {
+  "n": 770,
+  "errors": 370,
+  "buckets": {
+   "different_topic": {
+    "count": 155,
+    "share_of_errors": 0.4189189189189189,
+    "examples": [
+     {
+      "text": "The exchange rate on my purchase is wrong.",
+      "label": "card_payment_wrong_exchange_rate",
+      "pred": "wrong_exchange_rate_for_cash_withdrawal"
+     },
+     {
+      "text": "I bought something, but the exchange rate looks wrong.",
+      "label": "card_payment_wrong_exchange_rate",
+      "pred": "wrong_exchange_rate_for_cash_withdrawal"
+     },
+     {
+      "text": "The rate for a currency exchange was wrong when I bought something.",
+      "label": "card_payment_wrong_exchange_rate",
+      "pred": "wrong_exchange_rate_for_cash_withdrawal"
+     },
+     {
+      "text": "The exchange rate for my transaction last Saturday seems to have been wrong I got charged extra.  Please fix.",
+      "label": "card_payment_wrong_exchange_rate",
+      "pred": "transaction_charged_twice"
+     }
+    ]
+   },
+   "same_topic": {
+    "count": 215,
+    "share_of_errors": 0.581081081081081,
+    "examples": [
+     {
+      "text": "My card has not arrived yet.",
+      "label": "card_arrival",
+      "pred": "card_delivery_estimate"
+     },
+     {
+      "text": "Do you know if there is a tracking number for the new card you sent me?",
+      "label": "card_arrival",
+      "pred": "card_delivery_estimate"
+     },
+     {
+      "text": "I still don't have my card after 2 weeks.  What should I do?",
+      "label": "card_arrival",
+      "pred": "card_delivery_estimate"
+     },
+     {
+      "text": "I have been waiting longer than expected for my bank card, could you provide information on when it will arrive?",
+      "label": "card_arrival",
+      "pred": "card_delivery_estimate"
+     }
+    ]
+   }
+  }
+ },
+ "finetuned_1p5b|test": {
+  "n": 3080,
+  "errors": 226,
+  "buckets": {
+   "different_topic": {
+    "count": 90,
+    "share_of_errors": 0.39823008849557523,
+    "examples": [
+     {
+      "text": "when does the rate get determined",
+      "label": "exchange_rate",
+      "pred": "card_payment_fee_charged"
+     },
+     {
+      "text": "Why am I being charged more ?",
+      "label": "card_payment_wrong_exchange_rate",
+      "pred": "transfer_fee_charged"
+     },
+     {
+      "text": "Where did this fee come from?",
+      "label": "extra_charge_on_statement",
+      "pred": "card_payment_fee_charged"
+     },
+     {
+      "text": "I am a new customer, and I happened to look at my app and there is a charge I am not familiar with.  Could you tell me why the extra charge is there?",
+      "label": "extra_charge_on_statement",
+      "pred": "card_payment_fee_charged"
+     }
+    ]
+   },
+   "invalid_label": {
+    "count": 13,
+    "share_of_errors": 0.05752212389380531,
+    "examples": [
+     {
+      "text": "Is it a good time to exchange?",
+      "label": "exchange_rate",
+      "pred": "exchange_timing"
+     },
+     {
+      "text": "Is a copy of the police report necessary for completing the report process?",
+      "label": "lost_or_stolen_card",
+      "pred": "verify_physical_address"
+     },
+     {
+      "text": "I put money into my account for the minimum balance but the application didn't accept.",
+      "label": "top_up_reverted",
+      "pred": "failed_top_up"
+     },
+     {
+      "text": "I made a deposit this morning but it is still pending?",
+      "label": "balance_not_updated_after_cheque_or_cash_deposit",
+      "pred": "pending_deposit"
+     }
+    ]
+   },
+   "same_topic": {
+    "count": 123,
+    "share_of_errors": 0.5442477876106194,
+    "examples": [
+     {
+      "text": "How do I locate my card?",
+      "label": "card_arrival",
+      "pred": "lost_or_stolen_card"
+     },
+     {
+      "text": "Is there a way to know when my card will arrive?",
+      "label": "card_arrival",
+      "pred": "card_delivery_estimate"
+     },
+     {
+      "text": "When will I get my card?",
+      "label": "card_arrival",
+      "pred": "card_delivery_estimate"
+     },
+     {
+      "text": "How long does a card delivery take?",
+      "label": "card_arrival",
+      "pred": "card_delivery_estimate"
+     }
+    ]
+   }
+  }
+ },
+ "finetuned_1p5b|test_subset": {
+  "n": 770,
+  "errors": 61,
+  "buckets": {
+   "different_topic": {
+    "count": 27,
+    "share_of_errors": 0.4426229508196721,
+    "examples": [
+     {
+      "text": "Why am I unable to take money from my card but the statement says the transaction is still pending?",
+      "label": "pending_cash_withdrawal",
+      "pred": "pending_card_payment"
+     },
+     {
+      "text": "There is an incoming payment into my account, but it is deactivated. Will they still be processed?",
+      "label": "fiat_currency_support",
+      "pred": "pending_card_payment"
+     },
+     {
+      "text": "What countries can I travel to and have access to their currencies?",
+      "label": "fiat_currency_support",
+      "pred": "country_support"
+     },
+     {
+      "text": "How do I make sure I don't run out of money on my card while traveling?",
+      "label": "automatic_top_up",
+      "pred": "transfer_into_account"
+     }
+    ]
+   },
+   "invalid_label": {
+    "count": 2,
+    "share_of_errors": 0.03278688524590164,
+    "examples": [
+     {
+      "text": "I made a deposit this morning but it is still pending?",
+      "label": "balance_not_updated_after_cheque_or_cash_deposit",
+      "pred": "pending_deposit"
+     },
+     {
+      "text": "Can I use app to freeze account and dispute fraud?",
+      "label": "compromised_card",
+      "pred": "freeze_my_account"
+     }
+    ]
+   },
+   "same_topic": {
+    "count": 32,
+    "share_of_errors": 0.5245901639344263,
+    "examples": [
+     {
+      "text": "I have been waiting longer than expected for my bank card, could you provide information on when it will arrive?",
+      "label": "card_arrival",
+      "pred": "card_delivery_estimate"
+     },
+     {
+      "text": "Hey, my card was declined at an ATM in the city centre theatre. My account says the transaction is pending, though. I didn't get the money, though, so what does that mean?",
+      "label": "pending_cash_withdrawal",
+      "pred": "declined_cash_withdrawal"
+     },
+     {
+      "text": "How do I change currencies to euros?",
+      "label": "fiat_currency_support",
+      "pred": "exchange_via_app"
+     },
+     {
+      "text": "Is there a top-up feature, if there isn't a lot of money left?",
+      "label": "automatic_top_up",
+      "pred": "top_up_limits"
+     }
+    ]
+   }
+  }
+ }
+}

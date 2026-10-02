@@ -1,0 +1,71 @@
+# Single config for the Banking77 fine-tuning vs prompting project.
+# Paths are relative to the project root (the folder containing this file).
+# Everything machine-specific (models, device) is a setting here, so the same code runs on the
+# build laptop (CPU), the GPU laptop, or Colab.
+
+paths:
+  raw: data/raw
+  processed: data/processed
+  splits: data/splits
+  cache: data/cache          # per-item JSONL caches for the LLM evaluations
+  results: results
+  models: models             # Colab outputs go here (GGUF, adapter, training_log.json)
+  traces_db: data/traces.db
+
+data:
+  # Original PolyAI CSVs (same data as Hugging Face PolyAI/banking77, which is CC BY 4.0).
+  source: github
+  train_url: https://raw.githubusercontent.com/PolyAI-LDN/task-specific-datasets/master/banking_data/train.csv
+  test_url: https://raw.githubusercontent.com/PolyAI-LDN/task-specific-datasets/master/banking_data/test.csv
+  hf_card_url: https://huggingface.co/datasets/PolyAI/banking77/raw/main/README.md
+  seed: 42
+  val_frac: 0.10             # stratified hold-out from train, for tuning and early stopping
+  subset_per_class: 10       # stratified test subset for the slow LLM systems (77 x 10 = 770)
+  dev_subset_per_class: 2    # tiny stratified validation subset for prompt tuning (154)
+
+baseline:
+  # TF-IDF + logistic regression. C is chosen on the validation split only.
+  C_grid: [1, 3, 10, 30, 100, 300, 1000]  # extended after 100 was the edge of the first grid
+  ngram_range: [1, 2]
+  sublinear_tf: true
+  min_df: 1
+
+llm:
+  base_url: http://127.0.0.1:11434   # = localhost; avoids a ~2 s IPv6-first lookup per request on Windows
+  temperature: 0
+  seed: 42
+  num_predict: 24            # a label is at most ~10 tokens
+  num_ctx: 4096
+  keep_alive: 30m
+  request_timeout_s: 600
+  # System keys used by the eval scripts and the app. Change the model names here on the demo laptop
+  # (e.g. qwen2.5:3b instead of qwen2.5:7b on a 4 GB GPU).
+  systems:
+    zero_shot_7b:   {model: "qwen2.5:7b",   mode: zero_shot, label: "(b) Zero-shot qwen2.5:7b"}
+    few_shot_7b:    {model: "qwen2.5:7b",   mode: few_shot,  label: "(c) Few-shot (kNN) qwen2.5:7b"}
+    base_1p5b:      {model: "qwen2.5:1.5b", mode: zero_shot, label: "(d) Base Qwen2.5-1.5B-Instruct zero-shot"}
+    zero_shot_3b:   {model: "qwen2.5:3b",   mode: zero_shot, label: "(b2) Zero-shot qwen2.5:3b"}   # CONVENTIONS: evaluate 7B and 3B
+    finetuned_1p5b: {model: "banking77-qwen1.5b-lora", mode: finetuned, label: "(e) LoRA fine-tuned Qwen2.5-1.5B-Instruct"}
+  few_shot:
+    method: knn              # knn = nearest training examples by TF-IDF cosine; examples come from train only
+    k: 10
+
+finetune:
+  base_model: Qwen/Qwen2.5-1.5B-Instruct
+  ollama_name: banking77-qwen1.5b-lora
+  gguf_file: banking77-qwen1.5b-lora.Q4_K_M.gguf
+  lora_r: 16
+  lora_alpha: 16
+  lora_dropout: 0.0
+  max_seq_len: 256
+  epochs: 3
+  lr: 2.0e-4
+  batch_size: 16
+  grad_accum: 1
+  early_stopping_patience: 1  # evaluations (each half epoch) without val-loss improvement
+
+cost:
+  # ASSUMPTION, not a measurement: on-demand price of a small cloud instance used to turn measured
+  # seconds into dollars. Edit to match the machine you quote.
+  cpu_instance_usd_per_hour: 0.17   # e.g. an 8-vCPU general-purpose VM
+  gpu_instance_usd_per_hour: 0.53   # e.g. a single NVIDIA T4 VM

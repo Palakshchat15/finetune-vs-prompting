@@ -1,0 +1,40 @@
+{
+ "system": "few_shot_7b",
+ "model": "qwen2.5:7b",
+ "disk_size_gb": 4.683087332,
+ "details": {
+  "parent_model": "",
+  "format": "gguf",
+  "family": "qwen2",
+  "families": [
+   "qwen2"
+  ],
+  "parameter_size": "7.6B",
+  "quantization_level": "Q4_K_M",
+  "context_length": 32768,
+  "embedding_length": 3584
+ },
+ "loaded": [
+  {
+   "name": "qwen2.5:7b",
+   "model": "qwen2.5:7b",
+   "size": 5123845650,
+   "digest": "845dbda0ea48ed749caafd9e6037047aa19acfcfd82e704d7ca97d631a0b697e",
+   "details": {
+    "parent_model": "",
+    "format": "gguf",
+    "family": "qwen2",
+    "families": [
+     "qwen2"
+    ],
+    "parameter_size": "7.6B",
+    "quantization_level": "Q4_K_M"
+   },
+   "expires_at": "2026-10-02T08:50:41.8979675+05:30",
+   "size_vram": 2300040969,
+   "context_length": 4096
+  }
+ ],
+ "host_ram_total_gb": 7.88330496,
+ "measured_at": 1790909441.914319
+}

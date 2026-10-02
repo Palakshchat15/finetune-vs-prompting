@@ -1,0 +1,32 @@
+{
+ "seed": 42,
+ "n_labels": 77,
+ "rows": {
+  "train_original": 10003,
+  "train": 9000,
+  "val": 1003,
+  "test": 3080,
+  "test_subset": 770,
+  "val_subset": 154
+ },
+ "per_class_min_max": {
+  "train": [
+   31,
+   168
+  ],
+  "val": [
+   4,
+   19
+  ],
+  "test": [
+   40,
+   40
+  ],
+  "test_subset": [
+   10,
+   10
+  ]
+ },
+ "train_val_text_overlap": 0,
+ "train_test_text_overlap": 6
+}

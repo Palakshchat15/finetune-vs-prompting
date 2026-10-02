@@ -1,0 +1,19 @@
+# Environments, caches, local state
+.venv/
+__pycache__/
+.pytest_cache/
+.llm_lock
+*.db
+*.log
+*.out
+results/logs/
+logs/
+.env
+.env.*
+
+# Model files are in the GitHub Release (see README); keep the small training outputs
+models/*
+!models/training_log.json
+!models/val_predictions.csv
+nb_outputs/
+nb_outputs_zip.zip
