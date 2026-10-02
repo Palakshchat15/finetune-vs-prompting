@@ -90,7 +90,7 @@ Subset (770, 10 per class), same systems: (a) 0.875 / 0.876, (b) 0.630 / 0.596, 
 (b2) 0.519 / 0.498, (d) 0.406 / 0.368, (e) 0.921 / 0.922 (accuracy / macro-F1). The subset and full-test
 rankings agree.
 
-**Significance (paired, full test, exact McNemar):**
+**Significance (paired, full test, exact McNemar; `scripts/significance.py` -> `results/significance.json`):**
 
 | Pair | Only the first right | Only the second right | p |
 |---|---|---|---|
@@ -123,7 +123,7 @@ the per-message tokens and the short JSON answer.
   while (a) is about 1,200x faster and needs no GPU.
 - **Fine-tuning does.** With the same 9,000 labelled messages, LoRA turns the weakest model (1.5B, 0.412
   untuned) into the best one (0.927): +3.6 points over TF-IDF and +3.9 over few-shot 7B, both clearly
-  significant. It is also the fastest LLM here (79 ms p50, fully on the GPU, about 43 prompt tokens because
+  significant. It is also the fastest LLM here (79 ms p50, fully on the GPU, about 49 prompt tokens on average because
   the label list is learned rather than sent with every request).
 - **Which to deploy:** with plenty of labelled data and a fixed label set, fine-tune a small model (best
   accuracy, low latency, about $0.30 of training). TF-IDF stays a strong, free CPU fallback at 0.890.

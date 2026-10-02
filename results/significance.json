@@ -1,0 +1,20 @@
+{
+ "finetuned_1p5b vs tfidf_logreg": {
+  "n_items": 3080,
+  "only_first_correct": 205,
+  "only_second_correct": 93,
+  "p_value_exact_two_sided": 7.691383944032075e-11
+ },
+ "finetuned_1p5b vs few_shot_7b": {
+  "n_items": 3080,
+  "only_first_correct": 210,
+  "only_second_correct": 91,
+  "p_value_exact_two_sided": 5.510526378666407e-12
+ },
+ "few_shot_7b vs tfidf_logreg": {
+  "n_items": 3080,
+  "only_first_correct": 152,
+  "only_second_correct": 159,
+  "p_value_exact_two_sided": 0.7337452638803139
+ }
+}
