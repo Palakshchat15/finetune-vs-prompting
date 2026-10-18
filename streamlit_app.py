@@ -15,7 +15,8 @@ import streamlit as st
 
 from src import llm
 from src.config import load_config, path
-from src.systems import TFIDF_KEY, classify, system_keys, system_label, system_model
+from src.config import ROOT
+from src.systems import TFIDF_KEY, classic_keys, classify, distilbert_key, system_keys, system_label, system_model
 from src.tracing import Tracer
 
 st.set_page_config(page_title="Banking77: fine-tuning vs prompting", layout="wide")
@@ -24,7 +25,12 @@ tracer = Tracer(path("traces_db"))
 
 # Fixed colour per system (colour follows the entity, never its rank). Validated default categorical order.
 COLORS = {"tfidf_logreg": "#2a78d6", "zero_shot_7b": "#eb6834", "few_shot_7b": "#1baf7a",
-          "base_1p5b": "#eda100", "finetuned_1p5b": "#e87ba4", "zero_shot_3b": "#008300"}
+          "base_1p5b": "#eda100", "finetuned_1p5b": "#e87ba4", "zero_shot_3b": "#008300",
+          # 2026-10 upgrade. The scatter would need 11 hues (beyond the 8-slot palette), so the four classic
+          # baselines share slot 7 (violet) and are told apart by marker shape; DistilBERT takes slot 8 (red).
+          "nb_tfidf": "#6250d6", "svm_tfidf": "#6250d6", "svm_char": "#6250d6", "spacy_lemma_svm": "#6250d6",
+          "distilbert_pt": "#e34948"}
+SHAPES = {"nb_tfidf": "square", "svm_tfidf": "diamond", "svm_char": "triangle-up", "spacy_lemma_svm": "cross"}
 ATTRIBUTION = ("Data: Banking77 (Casanueva et al., 2020, PolyAI), CC BY 4.0. "
                "https://github.com/PolyAI-LDN/task-specific-datasets")
 
@@ -46,6 +52,21 @@ def availability() -> dict[str, str]:
             out[key] = "pending: run the Colab notebook, then scripts/import_finetuned.ps1"
         else:
             out[key] = f"model not pulled: ollama pull {sc['model']}"
+    for key in classic_keys():
+        out[key] = ("ok" if (path("models") / f"{key}.joblib").exists()
+                    else f"not trained yet: scripts/run_classic.py --system {key}")
+    dk = distilbert_key()
+    if dk:
+        ckpt = ROOT / cfg["distilbert"]["out_dir"] / "label_map.json"
+        if not ckpt.exists():
+            out[dk] = "not trained yet: scripts/train_distilbert.py (needs requirements-torch.txt)"
+        else:
+            try:
+                import torch  # noqa: F401, PLC0415
+                import transformers  # noqa: F401, PLC0415
+                out[dk] = "ok"
+            except ImportError:
+                out[dk] = "torch/transformers not installed: pip install -r requirements-torch.txt"
     return out
 
 
@@ -98,10 +119,12 @@ elif page == "Evaluation":
                "Cost per 1,000 requests = measured mean seconds per request x an ASSUMED cloud price "
                f"(${cfg['cost']['cpu_instance_usd_per_hour']}/h CPU instance, config.yaml). "
                "LLM latencies: GPU laptop (RTX 3050, 4 GB VRAM; the 7B is split GPU/CPU). "
-               "TF-IDF latency: build laptop CPU.")
+               "TF-IDF latency: build laptop CPU. Classic baselines (f)-(i): CPU. DistilBERT (j): p50/p95 on its "
+               "main device (latency_device, normally the GPU) and p50_ms_cpu / p95_ms_cpu on the CPU; "
+               "its cost uses the CPU latency.")
     d = comp[comp["split"] == split].copy()
-    show = ["label", "status", "n", "accuracy", "macro_f1", "invalid_rate", "p50_ms", "p95_ms", "throughput_rps",
-            "cost_per_1k_usd", "size_on_disk_mb", "mem_loaded_mb"]
+    show = ["label", "status", "n", "accuracy", "macro_f1", "invalid_rate", "p50_ms", "p95_ms", "latency_device",
+            "p50_ms_cpu", "p95_ms_cpu", "throughput_rps", "cost_per_1k_usd", "size_on_disk_mb", "mem_loaded_mb"]
     st.dataframe(d[[c for c in show if c in d]].rename(columns={"label": "system"}), hide_index=True,
                  use_container_width=True,
                  column_config={"accuracy": st.column_config.NumberColumn(format="%.3f"),
@@ -109,6 +132,8 @@ elif page == "Evaluation":
                                 "invalid_rate": st.column_config.NumberColumn(format="%.3f"),
                                 "p50_ms": st.column_config.NumberColumn(format="%.1f"),
                                 "p95_ms": st.column_config.NumberColumn(format="%.1f"),
+                                "p50_ms_cpu": st.column_config.NumberColumn(format="%.1f"),
+                                "p95_ms_cpu": st.column_config.NumberColumn(format="%.1f"),
                                 "throughput_rps": st.column_config.NumberColumn(format="%.1f"),
                                 "cost_per_1k_usd": st.column_config.NumberColumn(format="$%.5f"),
                                 "size_on_disk_mb": st.column_config.NumberColumn(format="%.0f"),
@@ -123,6 +148,8 @@ elif page == "Evaluation":
             x=alt.X("p50_ms:Q", scale=alt.Scale(type="log"), title="p50 latency per request (ms, log)"),
             y=alt.Y("accuracy:Q", scale=alt.Scale(zero=False), title="accuracy", axis=alt.Axis(format=".2f")),
             color=alt.Color("system:N", scale=alt.Scale(domain=keys, range=[COLORS[k] for k in keys]),
+                            legend=alt.Legend(title="system", orient="bottom")),
+            shape=alt.Shape("system:N", scale=alt.Scale(domain=keys, range=[SHAPES.get(k, "circle") for k in keys]),
                             legend=alt.Legend(title="system", orient="bottom")),
             tooltip=["label", alt.Tooltip("accuracy:Q", format=".3f"), alt.Tooltip("macro_f1:Q", format=".3f"),
                      alt.Tooltip("p50_ms:Q", format=".1f"), alt.Tooltip("p95_ms:Q", format=".1f")])
@@ -179,6 +206,31 @@ elif page == "Training":
                    f"\\${cfg['cost']['gpu_instance_usd_per_hour']}/h T4 price that is "   # \$: plain dollar, not LaTeX
                    f"\\${gpu_h * cfg['cost']['gpu_instance_usd_per_hour']:.2f}.")
         st.json(log["settings"])
+
+    # 2026-10 upgrade: (j) DistilBERT, trained locally with the hand-written PyTorch loop.
+    st.divider()
+    st.header("(j) DistilBERT (PyTorch loop, local GPU)")
+    dlog_p = path("results") / "distilbert_training_log.json"
+    if not dlog_p.exists():
+        st.info(r"Not run yet: .venv\Scripts\python scripts\train_distilbert.py (see README).")
+        st.json(cfg["distilbert"])
+    else:
+        dlog = json.loads(dlog_p.read_text(encoding="utf-8"))
+        c = st.columns(4)
+        c[0].metric("Validation accuracy (best epoch)", f"{dlog['val_accuracy']:.3f}")
+        c[1].metric("Device", dlog.get("gpu") or dlog["device"])
+        c[2].metric("Training time", f"{dlog['train_seconds'] / 60:.1f} min")
+        c[3].metric("Best / completed epochs", f"{dlog['best_epoch']} / {dlog['epochs_completed']}")
+        both = pd.concat([pd.DataFrame(dlog["train_loss"]).assign(series="train")[["step", "loss", "series"]],
+                          pd.DataFrame(dlog["val_loss"]).assign(series="validation")])
+        st.altair_chart(alt.Chart(both).mark_line(strokeWidth=2, point=alt.OverlayMarkDef(size=64)).encode(
+            x=alt.X("step:Q", title="step"), y=alt.Y("loss:Q", title="loss"),
+            color=alt.Color("series:N", scale=alt.Scale(domain=["train", "validation"],
+                                                        range=["#2a78d6", "#eb6834"])),
+            tooltip=["series", "step", alt.Tooltip("loss:Q", format=".4f")]).properties(height=300)
+            .configure_axis(grid=False), use_container_width=True)
+        st.dataframe(pd.DataFrame(dlog["epochs"]), hide_index=True, use_container_width=True)
+        st.json(dlog["settings"])
 
 else:
     st.title("Monitoring")

@@ -1,0 +1,11 @@
+# Docker Desktop publishes LoadBalancer services on localhost: http://localhost:8080
+apiVersion: v1
+kind: Service
+metadata:
+  name: banking77-distilbert
+  namespace: banking77
+spec:
+  type: LoadBalancer
+  selector: {app: banking77-distilbert}
+  ports:
+    - {name: http, port: 8080, targetPort: http}

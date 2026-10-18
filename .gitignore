@@ -17,3 +17,6 @@ models/*
 !models/val_predictions.csv
 nb_outputs/
 nb_outputs_zip.zip
+
+# 2026-10 upgrade: DistilBERT checkpoints (models/* above already covers them) and smoke-test outputs
+results/distilbert_training_log_smoke.json

@@ -1,0 +1,5 @@
+# (i) spacy_lemma_svm: spaCy + its small English model (about 13 MB), pinned to an exact wheel.
+#   .venv\Scripts\pip install -r requirements-nlp.txt
+# (f)-(h) need only scikit-learn from requirements.txt.
+spacy==3.8.16
+en_core_web_sm @ https://github.com/explosion/spacy-models/releases/download/en_core_web_sm-3.8.0/en_core_web_sm-3.8.0-py3-none-any.whl

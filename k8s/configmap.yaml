@@ -1,0 +1,11 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: banking77-config
+  namespace: banking77
+data:
+  MODEL_DIR: /app/models/distilbert   # baked into the image (service/Dockerfile)
+  MAX_LEN: "64"                       # same as training (config.yaml distilbert.max_len)
+  TORCH_NUM_THREADS: "1"              # = CPU limit below; more threads than cores only adds contention
+  MAX_TEXT_CHARS: "1000"
+  MAX_TOP_K: "10"

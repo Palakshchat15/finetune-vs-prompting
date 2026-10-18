@@ -17,7 +17,7 @@ import pandas as pd  # noqa: E402
 from src.config import load_config, path  # noqa: E402
 from src.data import load_labels, load_split  # noqa: E402
 from src.evalcache import cache_file, read_cache  # noqa: E402
-from src.systems import system_model  # noqa: E402
+from src.systems import classic_keys, distilbert_key, system_model  # noqa: E402
 
 # Topic keywords, checked in order; a label's topic is the first keyword it contains.
 TOPICS = ["top_up", "topping_up", "transfer", "cash", "withdrawal", "exchange", "currency", "identity", "verify",
@@ -66,6 +66,20 @@ def main():
             df = pd.DataFrame([{"text": cache[i]["text"], "label": cache[i]["label"], "pred": cache[i]["prediction"]}
                                for i in gold["orig_idx"]])
             res[f"{key}|{split}"] = analyse(df, labels)
+    # 2026-10 upgrade: classic baselines (prediction CSVs, like (a)) and DistilBERT (per-item cache), if scored.
+    for key in classic_keys():
+        for split in ("test", "test_subset"):
+            p = path("results") / "predictions" / f"{key}_{split}.csv"
+            if p.exists():
+                res[f"{key}|{split}"] = analyse(pd.read_csv(p), labels)
+    key = distilbert_key()
+    for split in ("test", "test_subset") if key else ():
+        gold = load_split(split)
+        cache = read_cache(cache_file(key, system_model(key), split))
+        if all(i in cache for i in gold["orig_idx"]):
+            res[f"{key}|{split}"] = analyse(pd.DataFrame([{"text": cache[i]["text"], "label": cache[i]["label"],
+                                                            "pred": cache[i]["prediction"]}
+                                                           for i in gold["orig_idx"]]), labels)
     (path("results") / "error_buckets.json").write_text(json.dumps(res, indent=1, ensure_ascii=False),
                                                          encoding="utf-8")
     for k, v in res.items():

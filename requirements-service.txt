@@ -1,0 +1,9 @@
+# FastAPI service (service/app.py). In Docker, torch (CPU build) is installed separately first, see
+# service/Dockerfile. Locally: .venv\Scripts\pip install -r requirements-torch.txt -r requirements-service.txt
+fastapi==0.143.3
+uvicorn==0.54.0
+pydantic==2.14.1
+transformers==5.20.1
+tokenizers==0.23.3
+safetensors==0.8.0
+numpy==2.5.3

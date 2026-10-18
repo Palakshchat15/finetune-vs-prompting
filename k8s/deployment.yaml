@@ -1,0 +1,57 @@
+# Sized for Docker Desktop's built-in cluster on an 8 GB laptop with Docker capped at 4 GB:
+# one replica requests 0.25 CPU / 768 MiB and may use up to 1 CPU / 1.25 GiB; the HPA allows at most 2,
+# so the worst case is 2.5 GiB for this app, leaving room for the Kubernetes system pods.
+# Memory numbers are estimates (CPU torch + 66M-parameter model); check with `kubectl top pod` after deploying.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: banking77-distilbert
+  namespace: banking77
+  labels: {app: banking77-distilbert}
+spec:
+  replicas: 1
+  revisionHistoryLimit: 2
+  selector:
+    matchLabels: {app: banking77-distilbert}
+  strategy:
+    type: RollingUpdate
+    rollingUpdate: {maxSurge: 0, maxUnavailable: 1}   # never run 2 old + 1 new pods on a 4 GB VM
+  template:
+    metadata:
+      labels: {app: banking77-distilbert}
+    spec:
+      terminationGracePeriodSeconds: 15
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 10001
+      containers:
+        - name: api
+          image: banking77-distilbert:0.1
+          imagePullPolicy: IfNotPresent      # local image from `docker build`; never pulled from a registry
+          ports:
+            - {name: http, containerPort: 8000}
+          envFrom:
+            - configMapRef: {name: banking77-config}
+          resources:
+            requests: {cpu: 250m, memory: 768Mi}
+            limits: {cpu: "1", memory: 1280Mi}
+          # The model loads in a background thread: /health answers at once (liveness), /ready only when the
+          # model is in memory (readiness), so no traffic reaches a pod that cannot answer yet.
+          startupProbe:
+            httpGet: {path: /health, port: http}
+            periodSeconds: 2
+            failureThreshold: 30
+          readinessProbe:
+            httpGet: {path: /ready, port: http}
+            initialDelaySeconds: 3
+            periodSeconds: 5
+            timeoutSeconds: 2
+            failureThreshold: 3
+          livenessProbe:
+            httpGet: {path: /health, port: http}
+            periodSeconds: 15
+            timeoutSeconds: 3
+            failureThreshold: 3
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities: {drop: [ALL]}

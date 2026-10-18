@@ -1,5 +1,33 @@
 # PROGRESS: fine-tuning vs prompting (Banking77, LoRA)
 
+## UPGRADE RUN (2026-10-18): done on the GPU laptop (logs: _work_in_progress/upgrades/)
+- Every step finished with rc=0 (`run_ai.log`): requirements-nlp, `run_classic.py`, CUDA torch 2.14.1+cu126 +
+  requirements-torch, DistilBERT smoke test, full training, `eval_distilbert.py`, summarize / error analysis /
+  significance, requirements-service. pytest: 59 passed.
+- Classic baselines, full test acc / macro-F1: (f) nb_tfidf 0.861 / 0.860, (g) svm_tfidf 0.887 / 0.887,
+  (h) svm_char 0.902 / 0.902, (i) spacy_lemma_svm 0.898 / 0.898 (best on val without stop-word removal).
+- (j) distilbert_pt: early stopping after epoch 8, best epoch 6 (val loss 0.316, val acc 0.9242), 4.0 min on the
+  RTX 3050, peak GPU memory 1,388 MB. Full test 0.928 / 0.928 (subset 0.913 / 0.913); p50 5.1 ms GPU, 21.2 ms CPU.
+- McNemar: DistilBERT vs TF-IDF p=2.6e-13; LoRA 1.5B vs DistilBERT p=0.83 (tie). README headline updated to say so.
+- Kubernetes (Docker Desktop, v1.36.1, kind-based, node desktop-control-plane): image built, pod ready (model load
+  8.1 s), /predict OK. Load test c=4, 500 requests: 21.0 req/s, p50 157 ms, p95 269 ms, 0 errors. HPA test c=8 for
+  180 s: 23.9 req/s, p50 323 ms, p95 398 ms, 0 errors; CPU 366%/70%, scaled 1 -> 2 replicas at about 7.5 min after
+  deploy; pod memory 675 MiB (limit 1280Mi). Deployment deleted afterwards.
+- README "Upgrade" section filled in from the result files.
+- **Still open:** retake the app screenshots with the new rows; Docker image size not recorded.
+
+## UPGRADE (2026-10-17): code written (run on 2026-10-18, see above; details in UPGRADE_NOTES.md)
+- Added (f)-(i) classic NLP baselines (`nb_tfidf`, `svm_tfidf`, `svm_char`, `spacy_lemma_svm`), (j) `distilbert_pt`
+  (hand-written PyTorch loop), and a FastAPI service + Dockerfile + k8s/ manifests + load test. All are registered in
+  config.yaml and picked up by summarize_results.py, error_analysis.py, significance.py and the app.
+- Existing systems, caches and numbers are untouched. pytest: 54 passed, 5 skipped (torch/fastapi tests skip until installed).
+- Pins checked on PyPI, not installed: spacy 3.8.16 + en_core_web_sm 3.8.0, torch 2.14.1 (cu126 / cpu index),
+  transformers 5.20.1, fastapi 0.143.3.
+- **Next (in order):** `pip install -r requirements-nlp.txt` -> `scripts\run_classic.py` -> CUDA torch +
+  `requirements-torch.txt` -> `scripts\train_distilbert.py --epochs 1 --limit 512` (smoke) -> `scripts\train_distilbert.py`
+  -> `scripts\eval_distilbert.py` -> `summarize_results.py`, `error_analysis.py`, `significance.py` -> pytest -> fill README
+  "not run yet" cells and retake screenshots -> Docker build + Kubernetes deploy + load test (README section).
+
 ## COMPLETE (2026-10-02 ~14:45 IST)
 - (e) trained on Colab T4 by the owner: 33.6 min, early-stopped at epoch 2.5 (best epoch 2.0), val acc 0.925.
   The merge cell first failed on Colab's old torchao vs newer peft; fixed with `pip uninstall torchao` (now in the

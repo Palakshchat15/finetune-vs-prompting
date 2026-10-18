@@ -16,5 +16,35 @@
   "only_first_correct": 152,
   "only_second_correct": 159,
   "p_value_exact_two_sided": 0.7337452638803139
+ },
+ "distilbert_pt vs tfidf_logreg": {
+  "n_items": 3080,
+  "only_first_correct": 186,
+  "only_second_correct": 70,
+  "p_value_exact_two_sided": 2.5610497065166635e-13
+ },
+ "finetuned_1p5b vs distilbert_pt": {
+  "n_items": 3080,
+  "only_first_correct": 93,
+  "only_second_correct": 97,
+  "p_value_exact_two_sided": 0.8277787949824293
+ },
+ "svm_tfidf vs tfidf_logreg": {
+  "n_items": 3080,
+  "only_first_correct": 35,
+  "only_second_correct": 44,
+  "p_value_exact_two_sided": 0.3681876338306308
+ },
+ "svm_char vs tfidf_logreg": {
+  "n_items": 3080,
+  "only_first_correct": 119,
+  "only_second_correct": 83,
+  "p_value_exact_two_sided": 0.01359503941721217
+ },
+ "spacy_lemma_svm vs svm_tfidf": {
+  "n_items": 3080,
+  "only_first_correct": 86,
+  "only_second_correct": 53,
+  "p_value_exact_two_sided": 0.0064348105395960874
  }
 }

@@ -1,0 +1,18 @@
+{
+ "url": "http://localhost:8080",
+ "requests": 4302,
+ "ok": 4302,
+ "errors": 0,
+ "error_samples": [],
+ "concurrency": 8,
+ "wall_s": 180.27235749992542,
+ "throughput_rps": 23.86389161190051,
+ "accuracy_of_answers": 0.9277080427708043,
+ "p50_ms": 323.22130003012717,
+ "p95_ms": 398.1720998417586,
+ "p99_ms": 466.87919995747507,
+ "mean_ms": 334.94275013890433,
+ "max_ms": 2474.44050014019,
+ "server_latency_p50_ms": 319.16749399988475,
+ "measured_at": 1792272316.9403772
+}

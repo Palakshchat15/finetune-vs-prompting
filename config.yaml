@@ -64,6 +64,52 @@ finetune:
   grad_accum: 1
   early_stopping_patience: 1  # evaluations (each half epoch) without val-loss improvement
 
+classic:
+  # Classic NLP baselines (added 2026-10, upgrade). Same protocol as (a): every hyperparameter is chosen on
+  # the validation split only, the model is refit on train, and test / test_subset are scored once.
+  # Outputs mirror (a): results/classic_<key>.json, results/predictions/<key>_<split>.csv, models/<key>.joblib.
+  systems:
+    nb_tfidf:        {label: "(f) TF-IDF + multinomial Naive Bayes", features: word, preprocess: none,  clf: nb}
+    svm_tfidf:       {label: "(g) TF-IDF + linear SVM",              features: word, preprocess: none,  clf: svm}
+    svm_char:        {label: "(h) Char n-gram TF-IDF + linear SVM",  features: char, preprocess: none,  clf: svm}
+    spacy_lemma_svm: {label: "(i) spaCy lemmas + linear SVM",        features: word, preprocess: spacy, clf: svm}
+  word_ngram_range: [1, 2]
+  char_ngram_range: [2, 5]   # char_wb analyzer: n-grams inside word boundaries (robust to typos)
+  sublinear_tf: true
+  min_df: 1
+  nb_alpha_grid: [0.01, 0.03, 0.1, 0.3, 1.0]
+  svm_C_grid: [0.03, 0.1, 0.3, 1, 3, 10]
+  # spaCy preprocessing for spacy_lemma_svm: lowercase lemmas, punctuation/space tokens dropped.
+  # Stop-word removal on/off is itself chosen on validation (spacy_remove_stop_grid). Words in
+  # spacy_keep_words are never removed: spaCy's stop list contains them, but they separate intents
+  # (e.g. why_verify_identity vs verify_my_identity, card_not_working).
+  spacy_model: en_core_web_sm
+  spacy_remove_stop_grid: [true, false]
+  spacy_keep_words: [not, no, never, why, how, when, where, what, which, can, cannot, nothing, again, still]
+  latency_sample_n: 500      # per-request latency on the first N items, one message at a time (as for (a))
+
+distilbert:
+  # (j) DistilBERT fine-tuned with a hand-written PyTorch loop (no HF Trainer). Sized for a 4 GB GPU.
+  system_key: distilbert_pt
+  label: "(j) DistilBERT fine-tuned (PyTorch loop)"
+  base_model: distilbert-base-uncased
+  out_dir: models/distilbert          # best checkpoint (save_pretrained); gitignored via models/*
+  max_len: 64                         # Banking77 messages are short; truncation count is logged
+  batch_size: 32
+  eval_batch_size: 128
+  epochs: 8                           # upper bound; early stopping usually ends sooner
+  lr: 5.0e-5
+  weight_decay: 0.01
+  warmup_ratio: 0.1                   # linear warm-up over the first 10% of steps, then linear decay to 0
+  max_grad_norm: 1.0
+  early_stopping_patience: 2          # epochs without a validation-loss improvement
+  min_delta: 0.0
+  seed: 42
+  amp: true                           # fp16 autocast + GradScaler, CUDA only (ignored on CPU)
+  num_workers: 0                      # Windows-safe DataLoader
+  latency_sample_n: 500               # CPU per-request latency sample; the main device times every item
+  cpu_threads: 4                      # torch threads for the CPU latency measurement
+
 cost:
   # ASSUMPTION, not a measurement: on-demand price of a small cloud instance used to turn measured
   # seconds into dollars. Edit to match the machine you quote.

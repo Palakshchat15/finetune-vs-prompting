@@ -1,4 +1,8 @@
-"""The five systems behind one interface: classify(text) -> dict. Used by the eval scripts and the app."""
+"""All systems behind one interface: classify(text) -> dict. Used by the eval scripts and the app.
+
+(a) TF-IDF + LogReg, (b)-(e) Ollama LLMs (config llm.systems), (f)-(i) classic NLP baselines (config
+classic.systems, scikit-learn joblib files) and (j) the PyTorch DistilBERT classifier (config distilbert).
+torch/transformers and spaCy are imported only when their system is used."""
 from __future__ import annotations
 
 import time
@@ -15,18 +19,48 @@ from .data import load_labels, load_split
 TFIDF_KEY = "tfidf_logreg"
 
 
+def classic_keys() -> list[str]:
+    return list(load_config().get("classic", {}).get("systems", {}))
+
+
+def distilbert_key() -> str | None:
+    return load_config().get("distilbert", {}).get("system_key")
+
+
 def system_keys() -> list[str]:
-    return [TFIDF_KEY, *load_config()["llm"]["systems"].keys()]
+    cfg = load_config()
+    return [TFIDF_KEY, *cfg["llm"]["systems"].keys(), *classic_keys(), *([distilbert_key()] if distilbert_key() else [])]
+
+
+def system_family(key: str) -> str:
+    """tfidf | llm | classic | distilbert"""
+    if key == TFIDF_KEY:
+        return "tfidf"
+    if key in classic_keys():
+        return "classic"
+    if key == distilbert_key():
+        return "distilbert"
+    return "llm"
 
 
 def system_label(key: str) -> str:
-    if key == TFIDF_KEY:
+    fam, cfg = system_family(key), load_config()
+    if fam == "tfidf":
         return "(a) TF-IDF + logistic regression"
-    return load_config()["llm"]["systems"][key]["label"]
+    if fam == "classic":
+        return cfg["classic"]["systems"][key]["label"]
+    if fam == "distilbert":
+        return cfg["distilbert"]["label"]
+    return cfg["llm"]["systems"][key]["label"]
 
 
 def system_model(key: str) -> str:
-    return "sklearn" if key == TFIDF_KEY else load_config()["llm"]["systems"][key]["model"]
+    fam = system_family(key)
+    if fam in ("tfidf", "classic"):
+        return "sklearn"
+    if fam == "distilbert":
+        return load_config()["distilbert"]["base_model"]
+    return load_config()["llm"]["systems"][key]["model"]
 
 
 @lru_cache(maxsize=1)
@@ -41,6 +75,23 @@ def _tfidf_model():
     if not p.exists():
         raise FileNotFoundError("TF-IDF model missing. Run: .venv/Scripts/python scripts/run_baseline.py")
     return joblib.load(p)
+
+
+@lru_cache(maxsize=8)
+def _classic_model(key: str):
+    p = path("models") / f"{key}.joblib"
+    if not p.exists():
+        raise FileNotFoundError(f"{key} model missing. Run: .venv/Scripts/python scripts/run_classic.py --system {key}")
+    return joblib.load(p)
+
+
+@lru_cache(maxsize=1)
+def _distilbert():
+    from .config import ROOT, detect_device  # noqa: PLC0415
+    from .distilbert import DistilBertIntentClassifier  # noqa: PLC0415  (needs requirements-torch.txt)
+    c = load_config()["distilbert"]
+    dev = detect_device()
+    return DistilBertIntentClassifier(ROOT / c["out_dir"], device="cpu" if dev == "mps" else dev)
 
 
 class KnnExamples:
@@ -74,6 +125,18 @@ def classify(text: str, key: str) -> dict:
         t = time.perf_counter() - t0
         return {"prediction": pred, "valid": True, "raw": pred, "t_retrieve": 0.0, "t_model": t, "t_total": t,
                 "prompt_tokens": 0, "completion_tokens": 0, "model": "sklearn"}
+    fam = system_family(key)
+    if fam == "classic":
+        pred = str(_classic_model(key).predict([text])[0])
+        t = time.perf_counter() - t0
+        return {"prediction": pred, "valid": True, "raw": pred, "t_retrieve": 0.0, "t_model": t, "t_total": t,
+                "prompt_tokens": 0, "completion_tokens": 0, "model": "sklearn"}
+    if fam == "distilbert":
+        clf = _distilbert()
+        r, t_model = clf.timed_predict_one(text)
+        return {"prediction": r["label"], "valid": True, "raw": f"{r['label']} (p={r['confidence']:.3f})",
+                "t_retrieve": 0.0, "t_model": t_model, "t_total": time.perf_counter() - t0, "prompt_tokens": 0,
+                "completion_tokens": 0, "model": f"{load_config()['distilbert']['base_model']} ({clf.device})"}
     sc = load_config()["llm"]["systems"][key]
     t_retrieve = 0.0
     if sc["mode"] == "zero_shot":

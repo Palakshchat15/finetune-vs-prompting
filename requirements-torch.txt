@@ -1,0 +1,9 @@
+# (j) DistilBERT training/evaluation and the app's DistilBERT system, in the project venv (Python 3.14).
+# Install torch FIRST from the CUDA 12.6 index (the PyPI torch wheel for Windows is CPU-only):
+#   .venv\Scripts\pip install torch==2.14.1 --index-url https://download.pytorch.org/whl/cu126
+#   .venv\Scripts\pip install -r requirements-torch.txt
+# (torch==2.14.1 below is then already satisfied by 2.14.1+cu126.) CPU-only machines: skip the first line.
+torch==2.14.1
+transformers==5.20.1
+tokenizers==0.23.3
+safetensors==0.8.0

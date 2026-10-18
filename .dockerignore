@@ -1,0 +1,11 @@
+# Docker build context = project root, for service/Dockerfile. Send only what the image needs
+# (the context would otherwise include .venv, data/ and the 1 GB GGUF in models/).
+*
+!requirements-service.txt
+!src/__init__.py
+!src/distilbert.py
+!service/__init__.py
+!service/core.py
+!service/app.py
+!models/distilbert
+!models/distilbert/**

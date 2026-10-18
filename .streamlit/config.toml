@@ -1,5 +1,6 @@
 [server]
 headless = true
+fileWatcherType = "none"   # the watcher walks transformers' lazy modules and fails on optional torchvision imports
 
 [browser]
 gatherUsageStats = false

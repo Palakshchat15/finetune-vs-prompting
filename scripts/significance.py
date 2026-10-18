@@ -16,14 +16,23 @@ sys.path.insert(0, str(ROOT))
 from src.config import load_config  # noqa: E402
 
 PAIRS = [("finetuned_1p5b", "tfidf_logreg"), ("finetuned_1p5b", "few_shot_7b"), ("few_shot_7b", "tfidf_logreg")]
+# 2026-10 upgrade: extra pairs, computed only when both systems have full-test results (else skipped).
+EXTRA_PAIRS = [("distilbert_pt", "tfidf_logreg"), ("finetuned_1p5b", "distilbert_pt"),
+               ("svm_tfidf", "tfidf_logreg"), ("svm_char", "tfidf_logreg"), ("spacy_lemma_svm", "svm_tfidf")]
+CLASSIC = set(load_config().get("classic", {}).get("systems", {}))
+DISTILBERT = load_config().get("distilbert", {})
 
 
 def correct_by_item(system: str) -> dict[int, bool]:
     """orig_idx -> prediction correct, on the full test split."""
-    if system == "tfidf_logreg":
-        with open(ROOT / "results" / "predictions" / "tfidf_test.csv", encoding="utf-8") as f:
+    if system == "tfidf_logreg" or system in CLASSIC:
+        name = "tfidf" if system == "tfidf_logreg" else system
+        with open(ROOT / "results" / "predictions" / f"{name}_test.csv", encoding="utf-8") as f:
             return {int(r["orig_idx"]): r["pred"] == r["label"] for r in csv.DictReader(f)}
-    model = load_config()["llm"]["systems"][system]["model"].replace(":", "-")
+    if system == DISTILBERT.get("system_key"):
+        model = DISTILBERT["base_model"]
+    else:
+        model = load_config()["llm"]["systems"][system]["model"].replace(":", "-")
     path = ROOT / "data" / "cache" / f"{system}__{model}__test.jsonl"
     with open(path, encoding="utf-8") as f:
         rows = [json.loads(line) for line in f if line.strip()]
@@ -44,6 +53,18 @@ def main() -> None:
     out = {}
     for first, second in PAIRS:
         res = exact_mcnemar(correct_by_item(first), correct_by_item(second))
+        out[f"{first} vs {second}"] = res
+        print(f"{first} vs {second}: {res}")
+    for first, second in EXTRA_PAIRS:
+        try:
+            a, b = correct_by_item(first), correct_by_item(second)
+        except (FileNotFoundError, KeyError):
+            print(f"{first} vs {second}: skipped (not run yet)")
+            continue
+        if len(set(a) & set(b)) < 3080:
+            print(f"{first} vs {second}: skipped (full test incomplete)")
+            continue
+        res = exact_mcnemar(a, b)
         out[f"{first} vs {second}"] = res
         print(f"{first} vs {second}: {res}")
     (ROOT / "results" / "significance.json").write_text(json.dumps(out, indent=1), encoding="utf-8")

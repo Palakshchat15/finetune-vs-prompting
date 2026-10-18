@@ -2,12 +2,17 @@
 
 > **Status: finished (2026-10-02).** All six systems evaluated on the full test set (3,080) and the subset (770).
 > LLM inference on the GPU laptop (RTX 3050 Laptop, 4 GB VRAM, 8 GB RAM); LoRA training on a free Colab T4.
+> **Upgrade run (2026-10-18):** four classic NLP baselines (f)-(i), a PyTorch DistilBERT (j) and a FastAPI +
+> Kubernetes service for (j) were added and run on the GPU laptop (see "Upgrade" below).
 > Every number below comes from a real run.
 >
 > **Headline:** the LoRA fine-tuned Qwen2.5-1.5B reaches **0.927 accuracy / 0.929 macro-F1** on the full test,
 > beating the TF-IDF baseline (0.890) and kNN few-shot qwen2.5:7b (0.888), both with exact McNemar p < 1e-10,
 > while being 21x faster than the 7B (79 ms vs 1.66 s p50) and a fifth of its size (1.0 GB vs 4.7 GB).
 > Untuned, the same 1.5B model scores 0.412. Training took 34 minutes on a T4 (0.56 GPU-hours).
+> **But a fine-tuned DistilBERT (66M parameters) ties it:** 0.928 accuracy / 0.928 macro-F1 (LoRA vs DistilBERT
+> McNemar p = 0.83, no difference), also well above TF-IDF (p = 2.6e-13). DistilBERT trained in 4.0 minutes on the
+> 4 GB laptop GPU and answers in 5.1 ms p50 on the GPU (21 ms on the CPU). Fine-tuning is what wins here, not model size.
 
 
 ![Evaluation page: accuracy vs latency for all six systems](results/screenshots/ft_Evaluation.png)
@@ -122,7 +127,7 @@ the per-message tokens and the short JSON answer.
 - **Prompting does not beat the baseline.** (c) and (a) are statistically tied (0.888 vs 0.890, p = 0.73),
   while (a) is about 1,200x faster and needs no GPU.
 - **Fine-tuning does.** With the same 9,000 labelled messages, LoRA turns the weakest model (1.5B, 0.412
-  untuned) into the best one (0.927): +3.6 points over TF-IDF and +3.9 over few-shot 7B, both clearly
+  untuned) into the best of these six (0.927; the upgrade's DistilBERT ties it, see below): +3.6 points over TF-IDF and +3.9 over few-shot 7B, both clearly
   significant. It is also the fastest LLM here (79 ms p50, fully on the GPU, about 49 prompt tokens on average because
   the label list is learned rather than sent with every request).
 - **Which to deploy:** with plenty of labelled data and a fixed label set, fine-tune a small model (best
@@ -190,6 +195,168 @@ Top confusions (true -> predicted, `results/confusions.json`):
   different_topic ones (173 vs 156): the LLM handles fine distinctions inside a family slightly better and
   is pulled off-topic more often by its retrieved examples.
 
+## Upgrade (2026-10): classic NLP baselines, PyTorch DistilBERT, FastAPI + Kubernetes
+
+> **Status: run on 2026-10-18** on the GPU laptop (RTX 3050 Laptop 4 GB, 8 GB RAM; Docker Desktop with a 4 GB cap
+> and a single-node Kubernetes v1.36.1 cluster). The six systems above, and their numbers, are unchanged (the
+> rebuilt `results/comparison.csv` reproduces them); the new systems only add rows to it and the app.
+> Details: `UPGRADE_NOTES.md`.
+
+```
+ data/splits (same train / val / test / test_subset)
+        +--> (f)-(i) classic NLP     run_classic.py      sklearn (+ spaCy en_core_web_sm for (i)), CPU, grid on val
+        +--> (j) DistilBERT          train_distilbert.py hand-written PyTorch loop, RTX 3050 4 GB (fp16 AMP)
+                                     eval_distilbert.py  per-item cache data/cache/distilbert_pt__*.jsonl, GPU + CPU latency
+                    |
+        summarize_results.py / error_analysis.py / significance.py  (new rows only)  -->  streamlit_app.py
+                    |
+        (j) checkpoint --> service/Dockerfile (CPU torch) --> k8s/ on Docker Desktop: Deployment + Service
+                           + ConfigMap + probes + HPA  <-- scripts/load_test.py
+```
+
+### New systems
+| Key | System | Hyperparameters (chosen on val only) |
+|---|---|---|
+| `nb_tfidf` | (f) word 1-2-gram TF-IDF + multinomial Naive Bayes | alpha in {0.01, 0.03, 0.1, 0.3, 1} |
+| `svm_tfidf` | (g) word 1-2-gram TF-IDF + linear SVM (`LinearSVC`) | C in {0.03, 0.1, 0.3, 1, 3, 10} |
+| `svm_char` | (h) character 2-5-gram TF-IDF (`char_wb`) + linear SVM | C as (g) |
+| `spacy_lemma_svm` | (i) spaCy `en_core_web_sm` lemmas (+/- stop words) + linear SVM | C as (g) x stop-word removal on/off |
+| `distilbert_pt` | (j) `distilbert-base-uncased` fine-tuned with a hand-written PyTorch loop | early stopping on val loss |
+
+(j) training: AdamW (lr 5e-5, weight decay 0.01, none on bias/LayerNorm), linear warm-up over 10% of the steps
+then linear decay, fp16 autocast + GradScaler on CUDA, gradient clipping at 1.0, max 8 epochs with early stopping
+(patience 2) on validation loss, best checkpoint saved to `models/distilbert/` (gitignored), seed 42 for Python,
+NumPy, torch and the DataLoader, max_len 64, batch 32. No HF Trainer.
+
+### Results (test set)
+Full test set (3,080), `results/comparison.csv`. Latency is one request at a time on the GPU laptop (CPU rows: its
+CPU, single process, 500 messages):
+
+| System | Accuracy | Macro-F1 | p50 / p95 latency | Size on disk |
+|---|---|---|---|---|
+| (f) TF-IDF + Naive Bayes | 0.861 | 0.860 | 4.96 / 5.53 ms (CPU) | 28 MB |
+| (g) TF-IDF + linear SVM | 0.887 | 0.887 | 0.49 / 0.54 ms (CPU) | 14 MB |
+| (h) Char n-gram + linear SVM | 0.902 | 0.902 | 0.54 / 0.65 ms (CPU) | 13 MB |
+| (i) spaCy lemmas + linear SVM | 0.898 | 0.898 | 2.76 / 3.84 ms (CPU, incl. spaCy) | 11 MB (+ en_core_web_sm) |
+| (j) **DistilBERT (PyTorch)** | **0.928** | **0.928** | GPU: 5.1 / 8.9 ms / CPU: 21.2 / 28.6 ms | 269 MB |
+
+Subset (770), accuracy / macro-F1: (f) 0.835 / 0.833, (g) 0.875 / 0.875, (h) 0.906 / 0.905, (i) 0.887 / 0.887,
+(j) 0.913 / 0.913. Chosen on val (`results/classic_*.json`): (f) alpha 0.01 (at the edge of the grid; the script
+flags it), (g) C 3, (h) C 3, (i) C 1 **without** stop-word removal (removal was worse on val at every C).
+(j) cost at the assumed $0.17/h CPU price: about $0.001 per 1,000 requests.
+
+Training (j) (`results/distilbert_training_log.json`): on the RTX 3050 Laptop GPU, 8 epochs (2,256 steps) in
+4.0 min (238 s, 0.066 GPU-hours), about 29 s per epoch. Validation loss was best at epoch 6 (0.316, val acc
+0.924, macro-F1 0.924) and did not improve in epochs 7-8, so early stopping (patience 2) ended the run after
+epoch 8 and the epoch 6 checkpoint was kept. Peak GPU memory 1,388 MB in training, 555 MB in evaluation, so it fits
+the 4 GB laptop GPU easily. 25 of the 9,000 training messages were truncated at max_len 64.
+
+Significance (exact McNemar, full test, `results/significance.json`):
+
+| Pair | Only the first right | Only the second right | p |
+|---|---|---|---|
+| (j) DistilBERT vs (a) TF-IDF | 186 | 70 | 2.6e-13 |
+| (e) LoRA 1.5B vs (j) DistilBERT | 93 | 97 | 0.83 (no difference) |
+| (g) TF-IDF + SVM vs (a) TF-IDF + LogReg | 35 | 44 | 0.37 (no difference) |
+| (h) char n-gram SVM vs (a) TF-IDF + LogReg | 119 | 83 | 0.014 |
+| (i) spaCy lemma SVM vs (g) TF-IDF + SVM | 86 | 53 | 0.0064 |
+
+Errors (full test, `results/error_buckets.json`; same_topic / different_topic): (j) 222 errors (135 / 87),
+(h) 302 (169 / 133), (i) 314 (170 / 144), (g) 347 (178 / 169), (f) 429 (187 / 242). (j)'s top confusions
+(`results/confusions.json`) are the same near-duplicate families as the other systems: why_verify_identity ->
+verify_my_identity (6), declined_transfer -> declined_card_payment (5), pending_transfer -> transfer_timing (4),
+pending_transfer -> balance_not_updated_after_bank_transfer (4).
+
+**Reading the upgrade results:**
+- **DistilBERT ties the LoRA LLM** (0.928 vs 0.927, p = 0.83) with about 23x fewer parameters, a 4-minute
+  training run on the laptop GPU instead of 34 minutes on a T4, no invalid labels (it is a classifier head over
+  the 77 labels), and 5 ms GPU / 21 ms CPU latency vs 79 ms for (e) on the GPU. For a fixed label set with
+  9,000 labelled examples, a fine-tuned small encoder is the better deployment choice here.
+- **Both fine-tuned models clearly beat every sparse baseline.** The best classic model, character n-grams +
+  SVM (0.902), is a small but significant gain over (a) (p = 0.014); swapping LogReg for a linear SVM on the same
+  features changes nothing (p = 0.37); spaCy lemmas help over raw words (p = 0.0064) but only if stop words are kept.
+- Naive Bayes is the weakest (0.861) and the only classic model with more different_topic than same_topic errors.
+
+Service load test (Kubernetes, CPU pod; `results/load_test_c4.json`, `results/load_test_hpa.json`, raw logs of the
+run): the image `banking77-distilbert:0.1` was built and deployed with `kubectl apply -k k8s/` to Docker Desktop's
+single-node cluster (Kubernetes v1.36.1, kind-based, node `desktop-control-plane`). The pod became ready (model load
+8.1 s), `/health`, `/ready` and `/predict` answered (example: "My new card still has not arrived" -> `card_arrival`,
+0.992). Pod limits: 1 CPU / 1280Mi.
+
+| Test | Requests | Errors | Throughput | p50 / p95 / p99 latency | Answer accuracy* |
+|---|---|---|---|---|---|
+| 500 requests, concurrency 4 | 500 | 0 | 21.0 req/s | 157 / 269 / 521 ms | 0.942 |
+| 180 s, concurrency 8 (HPA test) | 4,302 | 0 | 23.9 req/s | 323 / 398 / 467 ms | 0.928 |
+
+\*Share of answers equal to the true label of the `data/splits/test.csv` messages the load test sends (a sanity check, not an evaluation).
+
+HPA (1-2 replicas at 70% CPU): during the concurrency-8 test the CPU use reached 366% of the request (250m), and the
+HPA scaled the Deployment from 1 to 2 replicas at about 7.5 minutes after the deploy (HPA age 7m36s, within about
+30 s of the test starting). Throughput rose only from 21.0 to 23.9 req/s, most likely because both pods share the same laptop
+CPU. Memory after the test (`kubectl top pod`): 675 MiB for the busy pod and 342 MiB for the new one, under the
+1280 MiB limit. The deployment was deleted afterwards.
+
+### How to run (in order, Windows PowerShell, from this folder)
+```powershell
+# 1) Classic baselines. (f)-(h) need only requirements.txt; (i) needs spaCy + en_core_web_sm (~13 MB model).
+.venv\Scripts\pip install -r requirements-nlp.txt
+.venv\Scripts\python scripts\run_classic.py                  # all four; --system svm_char for one
+
+# 2) DistilBERT. CUDA torch first (the PyPI Windows wheel is CPU-only), then the rest.
+.venv\Scripts\pip install torch==2.14.1 --index-url https://download.pytorch.org/whl/cu126
+.venv\Scripts\pip install -r requirements-torch.txt
+.venv\Scripts\python -c "import torch; print(torch.__version__, torch.cuda.is_available())"   # expect True
+.venv\Scripts\python scripts\train_distilbert.py --epochs 1 --limit 512   # smoke test (separate output dir)
+.venv\Scripts\python scripts\train_distilbert.py                          # real run -> models\distilbert\
+.venv\Scripts\python scripts\eval_distilbert.py                           # test_subset + test, GPU and CPU latency
+
+# 3) Rebuild the comparison (existing rows are recomputed identically; new rows added)
+.venv\Scripts\python scripts\summarize_results.py
+.venv\Scripts\python scripts\error_analysis.py
+.venv\Scripts\python scripts\significance.py
+.venv\Scripts\python -m pytest -q
+.venv\Scripts\streamlit run streamlit_app.py
+```
+
+### FastAPI service and Kubernetes (Docker Desktop)
+`service/app.py` serves (j) on CPU: `POST /predict` (`{"text": "...", "top_k": 3}`), `GET /health` (liveness:
+the process is up), `GET /ready` (readiness: 200 only once the model is loaded; it loads in a background thread).
+`service/Dockerfile` installs the CPU-only torch wheel and bakes in `models/distilbert/`. `k8s/` holds a Namespace,
+ConfigMap (env settings), Deployment (1 replica, requests 250m / 768Mi, limits 1 CPU / 1280Mi, startup /
+readiness / liveness probes, non-root), a LoadBalancer Service on `localhost:8080` and an HPA (1-2 replicas at
+70% CPU), all applied with `kubectl apply -k k8s/`.
+
+```powershell
+# 0) Docker Desktop: Settings -> Resources: memory 4 GB; Settings -> Kubernetes: Enable Kubernetes (kubeadm).
+kubectl config use-context docker-desktop
+# 1) Optional local check without Docker (needs step 2 above)
+.venv\Scripts\pip install -r requirements-service.txt
+.venv\Scripts\uvicorn service.app:app --port 8000             # other terminal: curl.exe http://localhost:8000/ready
+# 2) Image (needs models\distilbert\ from step 2 above)
+docker build -f service/Dockerfile -t banking77-distilbert:0.1 .
+docker run --rm -p 8000:8000 banking77-distilbert:0.1        # optional container check, Ctrl+C to stop
+# 3) metrics-server (needed by the HPA; not installed by default on Docker Desktop)
+kubectl apply -f https://github.com/kubernetes-sigs/metrics-server/releases/latest/download/components.yaml
+kubectl -n kube-system patch deployment metrics-server --type=json --patch-file k8s/extras/metrics-server-insecure-tls.json
+# 4) Deploy and verify
+kubectl apply -k k8s/
+kubectl -n banking77 rollout status deployment/banking77-distilbert --timeout=180s
+kubectl -n banking77 get pods,svc,hpa
+curl.exe http://localhost:8080/health
+curl.exe http://localhost:8080/ready
+Invoke-RestMethod -Method Post -Uri http://localhost:8080/predict -ContentType "application/json" -Body '{"text": "My new card still has not arrived", "top_k": 3}'
+# 5) Load test (watch the HPA in a second terminal: kubectl -n banking77 get hpa -w)
+.venv\Scripts\python scripts\load_test.py --url http://localhost:8080 --requests 500 --concurrency 4
+.venv\Scripts\python scripts\load_test.py --url http://localhost:8080 --duration 180 --concurrency 8 --tag hpa
+kubectl -n banking77 top pod
+# 6) Clean up (frees the memory)
+kubectl delete -k k8s/
+```
+After changing the ConfigMap, restart the pods: `kubectl -n banking77 rollout restart deployment/banking77-distilbert`.
+On this laptop's kind-based Docker Desktop cluster (2026-10-18) the locally built image was used directly. If a
+different setup leaves the pod in `ErrImagePull`, load the image into the node:
+`docker save banking77-distilbert:0.1 | docker exec -i desktop-control-plane ctr -n k8s.io images import -`.
+
 ## Design decisions
 - **Original CSVs, not the HF loader.** They are the same data, and plain CSV downloads avoid the `datasets` dependency. The licence was checked on the HF card.
 - **Stratified test subset (770) for the slow LLMs.** A 7B model on this CPU takes seconds per request, so 3,080 x 3 systems is too slow on the build laptop.
@@ -207,6 +374,14 @@ Top confusions (true -> predicted, `results/confusions.json`):
   - The loss covers the answer tokens only.
 - **Ollama URL `127.0.0.1` instead of `localhost`.** On Windows, Python's `localhost` lookup tries IPv6 first and cost about 2 s per request (measured: a model-list call took 2.4 s vs 0.6 s). That would have distorted every latency number.
 - **Cost** = measured mean seconds per request x an hourly price stated in `config.yaml` as an assumption.
+- **Upgrade systems (f)-(j) follow the same protocol** as (a): train on train, choose every hyperparameter on val
+  (for (j): early stopping on val loss), score test once.
+  - (i) keeps question and negation words (`spacy_keep_words` in config) even when stop words are removed, because
+    they separate intents such as `why_verify_identity` vs `verify_my_identity`; whether removal helps at all is chosen on val.
+  - (j)'s per-request latency is measured on the GPU for every item and on the CPU for the first 500 per split;
+    its cost uses the CPU latency, because the service runs on CPU.
+  - **Docker/Kubernetes are an add-on for the service only.** CONVENTIONS says no Docker for the AI projects; the
+    Streamlit app and every evaluation still run without Docker. The owner asked for the service as a later upgrade.
 
 ## Limitations
 - One training run (seed 42); no LoRA hyperparameter search, so (e) could likely go a little higher.
@@ -228,3 +403,8 @@ See `PROGRESS.md`.
 - With the 7B loaded, free system RAM dropped to about 0.5 GB on the 8 GB laptop, so run one model at a time and
   close other apps. The fine-tuned (e) GGUF is 986 MB on disk and 1.2 GB loaded, fully in VRAM on a 4 GB GPU,
   so it is the most practical LLM option on this laptop.
+- Upgrade (measured 2026-10-18): (j) DistilBERT is about 66M parameters (269 MB of weights on disk). Peak GPU memory
+  1,388 MB in training and 555 MB in evaluation; the evaluation process used about 1.6 GB RAM. The service pod used
+  675 MiB under load (`kubectl top pod`, limit 1280Mi). The Docker image size was not recorded in the run logs (still
+  to be measured with `docker images banking77-distilbert`). Run one heavy job at a time (training, Ollama
+  evaluations and the Kubernetes cluster all compete for the same 8 GB).
